@@ -24,12 +24,20 @@ db.connect((err) => {
 
 // ========== REGISTER API ==========
 app.post("/api/register", (req, res) => {
-    const { firstname, lastname } = req.body;
+    const { firstname, lastname, email, phone, username, password } = req.body;
 
-    const sql = "INSERT INTO users (firstname, lastname) VALUES (?, ?)";
-    db.query(sql, [firstname, lastname], (err) => {
-        if (err) return res.json({ message: "Insert Failed", error: err });
-        return res.json({ message: "Register Success" });
+    const sql = `
+        INSERT INTO users 
+        (firstname, lastname, email, phone, username, password) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql, [firstname, lastname, email, phone, username, password], (err, result) => {
+        if (err) {
+            console.log("DB ERROR:", err); // ดู error จริง
+            return res.json({ message: "Insert Failed", error: err });
+        }
+        return res.json({ message: "Register Success", id: result.insertId });
     });
 });
 
