@@ -69,6 +69,17 @@ app.post("/api/login", (req, res) => {
   });
 });
 
+// ========== LOGIN ADMIN API ==========
+app.post("/api/login-@min", (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === "Daily@Life" && password === "@min1234") {
+    return res.json({ message: "Admin Login Success"});
+  }else{
+        return res.json({ message: "Next step"});
+  }
+});
+
 // ========== START SERVER ==========
 app.listen(5000, () => {
   console.log("Backend running on port 5000");
