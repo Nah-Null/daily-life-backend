@@ -80,6 +80,38 @@ app.post("/api/login-@min", (req, res) => {
   }
 });
 
+//=======search University=========
+app.post("/api/search-university", (req, res) => {
+  const { university,location } = req.body;
+
+  const sql = "SELECT * FROM un_data WHERE university = ? OR province = ? ";
+
+  db.query(sql, [university,location], (err, results) => {
+    if (err) {
+      console.log("DB ERROR:", err);
+      return res.json({ message: "Search Failed", error: err });
+    }
+    else {
+      return res.json({ message: results });
+    }
+  });
+});
+
+//=======get all University=========
+app.get("/api/search-all-university", (req, res) => {
+
+  const sql = "SELECT * FROM un_data ";
+
+  db.query(sql,(err, results) => {
+    if (err) {
+      console.log("DB ERROR:", err);
+      return res.json({ message: "Search Failed", error: err });
+    }else {
+      return res.json({ message: results });
+    }
+  });
+});
+
 // ========== START SERVER ==========
 app.listen(5000, () => {
   console.log("Backend running on port 5000");
