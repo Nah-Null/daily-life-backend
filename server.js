@@ -82,20 +82,83 @@ app.post("/api/login-@min", (req, res) => {
 
 //=======search University=========
 app.post("/api/search-university", (req, res) => {
-  const { university,location } = req.body;
+  const { 
+    university_th, 
+    university_en, 
+    shortName, 
+    faculty, 
+    major, 
+    province 
+  } = req.body;
+  
+  let sql = "SELECT * FROM un_data WHERE 1=1";
+  const params = [];
 
-  const sql = "SELECT * FROM un_data WHERE university = ? OR province = ? ";
+  // search university name (Thai)
+  if (university_th && university_th.trim()) {
+    sql += " AND university_th LIKE ?";
+    params.push(`%${university_th}%`);
+  }
 
-  db.query(sql, [university,location], (err, results) => {
+  // search university name (English)
+  if (university_en && university_en.trim()) {
+    sql += " AND university_en LIKE ?";
+    params.push(`%${university_en}%`);
+  }
+
+  // search short name
+  if (shortName && shortName.trim()) {
+    sql += " AND university_shortname LIKE ?";
+    params.push(`%${shortName}%`);
+  }
+
+  // search province
+  if (province && province.trim()) {
+    sql += " AND province LIKE ?";
+    params.push(`%${province}%`);
+  }
+
+  // search faculty in JSON
+  if (faculty && faculty.trim()) {
+    sql += " AND JSON_SEARCH(faculties, 'one', ?) IS NOT NULL";
+    params.push(faculty);
+  }
+
+  // search major in JSON
+  if (major && major.trim()) {
+    sql += " AND JSON_SEARCH(majors, 'one', ?) IS NOT NULL";
+    params.push(major);
+  }
+
+  console.log("SQL Query:", sql);
+  console.log("Params:", params);
+
+  db.query(sql, params, (err, results) => {
     if (err) {
       console.log("DB ERROR:", err);
-      return res.json({ message: "Search Failed", error: err });
+      return res.status(500).json({ 
+        success: false,
+        message: "Search Failed", 
+        error: err.message 
+      });
     }
-    else {
-      return res.json({ message: results });
+    
+    if (results.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        message: "No universities found",
+        data: []
+      });
     }
+
+    return res.json({ 
+      success: true,
+      message: `Found ${results.length} result(s)`,
+      data: results 
+    });
   });
 });
+
 
 //=======get all University=========
 app.get("/api/search-all-university", (req, res) => {
