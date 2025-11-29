@@ -8,9 +8,9 @@ app.use(express.json());
 
 // ========== CONNECT DATABASE ==========
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
+  host: "daily-life-demo.cfwiseyse6is.ap-southeast-2.rds.amazonaws.com",
+  user: "adminDaily",
+  password: "awd486S5!qw",
   database: "Daily_Life_DB"
 });
 
