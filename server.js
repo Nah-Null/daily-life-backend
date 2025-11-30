@@ -9,10 +9,10 @@ app.use(express.json());
 // ========== CONNECT DATABASE ==========
 const db = mysql.createConnection({
   host: "daily-life-demo-1.cfwiseyse6is.ap-southeast-2.rds.amazonaws.com",
-  port: "3306",
   user: "admin",
   password: "awd486S5!qq",
-  database: "Daily_Life_DB"
+  database: "Daily_Life_DB",
+  port: "3306"
 });
 
 db.connect((err) => {
