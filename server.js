@@ -23,19 +23,32 @@ db.connect((err) => {
 });
 
 // ========== REGISTER API ==========
+// ========== REGISTER API (ปรับปรุงการ Log) ==========
 app.post("/api/register", (req, res) => {
   const { firstname, lastname, email, phone, username, password } = req.body;
 
   const sql = `
-        INSERT INTO users 
-        (firstname, lastname, email, phone, username, password) 
-        VALUES (?, ?, ?, ?, ?, ?)
-    `;
+    INSERT INTO users 
+    (firstname, lastname, email, phone, username, password) 
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
 
   db.query(sql, [firstname, lastname, email, phone, username, password], (err, result) => {
     if (err) {
-      console.log("DB ERROR:", err);
-      return res.json({ message: "Insert Failed", error: err });
+      // 📝 ปรับปรุงการ Log เพื่อระบุวันที่/เวลา และรายละเอียดการ Query ที่มีปัญหา
+      console.error("=======================================");
+      console.error(`[${new Date().toISOString()}] FATAL DB INSERT ERROR`);
+      console.error("SQL Query:", sql.trim()); // แสดง Query ที่รัน
+      console.error("Parameters:", [firstname, lastname, email, phone, username, password]); // แสดงข้อมูลที่พยายามใส่
+      console.error("Error Details:", err); // แสดงรายละเอียด Error จากฐานข้อมูล
+      console.error("=======================================");
+
+      // ส่ง response กลับไป (ไม่ควรส่ง Error object เต็มรูปแบบกลับไปใน Production)
+      return res.status(500).json({ 
+        message: "Insert Failed: Internal Server Error", 
+        // ใน Production ควรส่งแค่รหัส Error หรือข้อความทั่วไปเท่านั้น
+        error_code: err.code || "UNKNOWN_DB_ERROR" 
+      });
     }
 
     return res.json({ message: "Register Success", id: result.insertId });
