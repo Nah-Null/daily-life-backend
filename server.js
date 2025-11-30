@@ -7,6 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 // ========== CONNECT DATABASE ==========
+async function test() {
 const db = mysql.createConnection({
   host: "daily-life-demo-1.cfwiseyse6is.ap-southeast-2.rds.amazonaws.com",
   user: "admin",
@@ -15,6 +16,11 @@ const db = mysql.createConnection({
   port: "3306",
   ssl: { rejectUnauthorized: false } // ต้องใส่ถ้า RDS require SSL
 });
+  const [rows] = await connection.execute("SELECT 1+1 AS solution");
+  console.log(rows);
+  await connection.end();
+}
+test();
 
 db.connect((err) => {
   if (err) {
