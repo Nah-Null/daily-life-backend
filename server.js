@@ -12,7 +12,8 @@ const db = mysql.createConnection({
   user: "admin",
   password: "awd486S5!qq",
   database: "Daily_Life_DB",
-  port: "3306"
+  port: "3306",
+  ssl: { rejectUnauthorized: false } // ต้องใส่ถ้า RDS require SSL
 });
 
 db.connect((err) => {
