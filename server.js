@@ -191,6 +191,93 @@ app.get("/api/search-all-university", (req, res) => {
   });
 });
 
+// ========== UPDATE PROFILE API ==========
+app.put("/api/user/:id", (req, res) => {
+  const { id } = req.params;
+  const { firstname, lastname, email, phone, username, password } = req.body;
+
+  // ตรวจสอบว่าไม่มีข้อมูลเลย = ไม่อนุญาต
+  if (!firstname && !lastname && !email && !phone && !username && !password) {
+    return res.status(400).json({
+      success: false,
+      message: "No fields provided for update"
+    });
+  }
+
+  // สร้าง Dynamic SQL
+  let sql = "UPDATE users SET ";
+  const fields = [];
+  const params = [];
+
+  if (firstname) {
+    fields.push("firstname = ?");
+    params.push(firstname);
+  }
+
+  if (lastname) {
+    fields.push("lastname = ?");
+    params.push(lastname);
+  }
+
+  if (email) {
+    fields.push("email = ?");
+    params.push(email);
+  }
+
+  if (phone) {
+    fields.push("phone = ?");
+    params.push(phone);
+  }
+
+  if (username) {
+    fields.push("username = ?");
+    params.push(username);
+  }
+
+  if (password) {
+    fields.push("password = ?");
+    params.push(password);
+  }
+
+  sql += fields.join(", ") + " WHERE id = ?";
+  params.push(id);
+
+  console.log("===== UPDATE PROFILE QUERY =====");
+  console.log("SQL:", sql);
+  console.log("Params:", params);
+  console.log("================================");
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.error("=======================================");
+      console.error(`[${new Date().toISOString()}] FATAL DB UPDATE ERROR`);
+      console.error("SQL Query:", sql);
+      console.error("Parameters:", params);
+      console.error("Error Details:", err);
+      console.error("=======================================");
+
+      return res.status(500).json({
+        success: false,
+        message: "Update Failed: Internal Server Error",
+        error_code: err.code || "UNKNOWN_DB_ERROR"
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User Not Found"
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Profile Updated Successfully"
+    });
+  });
+});
+
+
 // ========== START SERVER ==========
 app.listen(5000, () => {
   console.log("Backend running on port 5000");
