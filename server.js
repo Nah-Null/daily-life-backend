@@ -194,10 +194,10 @@ app.get("/api/search-all-university", (req, res) => {
 // ========== UPDATE PROFILE API ==========
 app.put("/api/user/:id", (req, res) => {
   const { id } = req.params;
-  const { firstname, lastname, email, phone, username, password } = req.body;
+  const { firstname, lastname, email, phone, username, password, profile_image } = req.body;
 
   // ตรวจสอบว่าไม่มีข้อมูลเลย = ไม่อนุญาต
-  if (!firstname && !lastname && !email && !phone && !username && !password) {
+  if (!firstname && !lastname && !email && !phone && !username && !password && !profile_image) {
     return res.status(400).json({
       success: false,
       message: "No fields provided for update"
@@ -209,35 +209,13 @@ app.put("/api/user/:id", (req, res) => {
   const fields = [];
   const params = [];
 
-  if (firstname) {
-    fields.push("firstname = ?");
-    params.push(firstname);
-  }
-
-  if (lastname) {
-    fields.push("lastname = ?");
-    params.push(lastname);
-  }
-
-  if (email) {
-    fields.push("email = ?");
-    params.push(email);
-  }
-
-  if (phone) {
-    fields.push("phone = ?");
-    params.push(phone);
-  }
-
-  if (username) {
-    fields.push("username = ?");
-    params.push(username);
-  }
-
-  if (password) {
-    fields.push("password = ?");
-    params.push(password);
-  }
+  if (firstname) { fields.push("firstname = ?"); params.push(firstname); }
+  if (lastname)  { fields.push("lastname = ?"); params.push(lastname); }
+  if (email)     { fields.push("email = ?"); params.push(email); }
+  if (phone)     { fields.push("phone = ?"); params.push(phone); }
+  if (username)  { fields.push("username = ?"); params.push(username); }
+  if (password)  { fields.push("password = ?"); params.push(password); }
+  if (profile_image) { fields.push("profile_image = ?"); params.push(profile_image); }
 
   sql += fields.join(", ") + " WHERE id = ?";
   params.push(id);
@@ -249,17 +227,12 @@ app.put("/api/user/:id", (req, res) => {
 
   db.query(sql, params, (err, result) => {
     if (err) {
-      console.error("=======================================");
-      console.error(`[${new Date().toISOString()}] FATAL DB UPDATE ERROR`);
-      console.error("SQL Query:", sql);
-      console.error("Parameters:", params);
-      console.error("Error Details:", err);
-      console.error("=======================================");
-
+      console.error(`[${new Date().toISOString()}] FATAL DB UPDATE ERROR`, err);
       return res.status(500).json({
         success: false,
         message: "Update Failed: Internal Server Error",
-        error_code: err.code || "UNKNOWN_DB_ERROR"
+        error_code: err.code || "UNKNOWN_DB_ERROR",
+        error_message: err.sqlMessage
       });
     }
 
@@ -276,6 +249,7 @@ app.put("/api/user/:id", (req, res) => {
     });
   });
 });
+
 
 
 // ========== START SERVER ==========
