@@ -17,7 +17,6 @@ const db = mysql.createConnection({
   ssl: { rejectUnauthorized: false } // ต้องใส่ถ้า RDS require SSL
 });
 
-
 db.connect((err) => {
   if (err) {
     console.log("Database Error:", err);
@@ -26,8 +25,35 @@ db.connect((err) => {
   }
 });
 
+// ========== LOGIN API ==========
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body;
+
+  const sql = "SELECT * FROM users WHERE username = ?";
+
+  db.query(sql, [username], (err, results) => {
+    if (err) {
+      console.log("DB ERROR:", err);
+      return res.json({ message: "Login Failed", error: err });
+    }
+
+    const user = results[0];
+
+    if (!user) {
+      return res.json({ message: "User not found" });
+    }
+
+    // ไม่ใช้ bcrypt — เทียบตรง ๆ
+    if (password === user.password) {
+      return res.json({ message: "Login Success", user });
+    } else {
+      return res.json({ message: "Invalid password" });
+    }
+  });
+});
+// ========== LOGIN API ==========
+
 // ========== REGISTER API ==========
-// ========== REGISTER API (ปรับปรุงการ Log) ==========
 app.post("/api/register", (req, res) => {
   const { firstname, lastname, email, phone, username, password } = req.body;
 
@@ -58,47 +84,10 @@ app.post("/api/register", (req, res) => {
     return res.json({ message: "Register Success", id: result.insertId });
   });
 });
-
-// ========== LOGIN API ==========
-app.post("/api/login", (req, res) => {
-  const { username, password } = req.body;
-
-  const sql = "SELECT * FROM users WHERE username = ?";
-
-  db.query(sql, [username], (err, results) => {
-    if (err) {
-      console.log("DB ERROR:", err);
-      return res.json({ message: "Login Failed", error: err });
-    }
-
-    const user = results[0];
-
-    if (!user) {
-      return res.json({ message: "User not found" });
-    }
-
-    // ไม่ใช้ bcrypt — เทียบตรง ๆ
-    if (password === user.password) {
-      return res.json({ message: "Login Success", user });
-    } else {
-      return res.json({ message: "Invalid password" });
-    }
-  });
-});
-
-// ========== LOGIN ADMIN API ==========
-// app.post("/api/login-@min", (req, res) => {
-//   const { username, password } = req.body;
-
-//   if (username === "Daily@Life" && password === "@min1234") {
-//     return res.json({ message: "Admin Login Success"});
-//   }else{
-//         return res.json({ message: "Next step"});
-//   }
-// });
+// ========== REGISTER API ==========
 
 //=======search University=========
-app.post("/api/search-university", (req, res) => {
+app.post("/university/search", (req, res) => {
   const { 
     university_th, 
     university_en, 
@@ -175,10 +164,10 @@ app.post("/api/search-university", (req, res) => {
     });
   });
 });
-
+//=======search University=========
 
 //=======get all University=========
-app.get("/api/search-all-university", (req, res) => {
+app.get("/university/get-all", (req, res) => {
 
   const sql = "SELECT * FROM un_data ";
 
@@ -191,9 +180,51 @@ app.get("/api/search-all-university", (req, res) => {
     }
   });
 });
+//=======get all University=========
+
+//=======get all user=========
+app.get("/user/gett-all", (req, res) => {
+
+  const sql = "SELECT * FROM users ";
+
+  db.query(sql,(err, results) => {
+    if (err) {
+      console.log("DB ERROR:", err);
+      return res.json({ message: "Search Failed", error: err });
+    }else {
+      return res.json({ message: results });
+    }
+  });
+});
+
+//=======delete user=========
+app.delete("/user/delete/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "DELETE FROM users WHERE id = ?";
+  
+  // db.query(sql, [id], ... ) <--- อย่าลืมส่งค่า id เข้าไปใน Query!
+  
+  db.query(sql, [id], (err, results) => {
+    // 1. ตรวจสอบ 'err' ซึ่งเป็นตัวแปรแรกที่รับมาจาก Callback
+    if(err){ 
+      console.log("DB ERROR:", err);
+      // ควรส่ง Status Code 500 กลับไปด้วย
+      return res.status(500).json({ error: "Database error during deletion" }); 
+    }
+    
+    // 2. ตรวจสอบว่ามีการลบข้อมูลจริงหรือไม่ (Optional แต่แนะนำ)
+    if (results.affectedRows === 0) {
+        return res.status(404).json({ message: "User not found" });
+    }
+    
+    // 3. ถ้าลบสำเร็จ
+    return res.json({ message: "Delete Success", id: id });
+  });
+});
+//=======delete user=========
 
 // ========== UPDATE PROFILE API ==========
-app.put("/api/user/:id", (req, res) => {
+app.put("/user/update/:id", (req, res) => {
   const { id } = req.params;
   const { firstname, lastname, email, phone, username, password, profile_image } = req.body;
 
@@ -250,45 +281,10 @@ app.put("/api/user/:id", (req, res) => {
     });
   });
 });
-//=======get all user=========
-app.get("/api/all-user", (req, res) => {
+// ========== UPDATE PROFILE API ==========
 
-  const sql = "SELECT * FROM users ";
-
-  db.query(sql,(err, results) => {
-    if (err) {
-      console.log("DB ERROR:", err);
-      return res.json({ message: "Search Failed", error: err });
-    }else {
-      return res.json({ message: results });
-    }
-  });
-});
-app.delete("/api/delete/:id", (req, res) => {
-  const { id } = req.params;
-  const sql = "DELETE FROM users WHERE id = ?";
-  
-  // db.query(sql, [id], ... ) <--- อย่าลืมส่งค่า id เข้าไปใน Query!
-  
-  db.query(sql, [id], (err, results) => {
-    // 1. ตรวจสอบ 'err' ซึ่งเป็นตัวแปรแรกที่รับมาจาก Callback
-    if(err){ 
-      console.log("DB ERROR:", err);
-      // ควรส่ง Status Code 500 กลับไปด้วย
-      return res.status(500).json({ error: "Database error during deletion" }); 
-    }
-    
-    // 2. ตรวจสอบว่ามีการลบข้อมูลจริงหรือไม่ (Optional แต่แนะนำ)
-    if (results.affectedRows === 0) {
-        return res.status(404).json({ message: "User not found" });
-    }
-    
-    // 3. ถ้าลบสำเร็จ
-    return res.json({ message: "Delete Success", id: id });
-  });
-});
-
-app.get("/userby/:id", (req, res) => {
+//=======get user by id=========
+app.get("/user/get/:id", (req, res) => {
   const { id } = req.params;
 
   const sql = "SELECT * FROM users WHERE id = ?";
@@ -302,6 +298,9 @@ app.get("/userby/:id", (req, res) => {
     }
   });
 });
+//=======get user by id=========
+
+// ========== ADMIN UPDATE USER PROFILE API ==========
 app.put("/admin/user/:id", (req, res) => {
     const { id } = req.params;
     const { firstname, lastname, email, phone, username, password, profile_image } = req.body;
@@ -374,6 +373,8 @@ app.put("/admin/user/:id", (req, res) => {
         return res.json({ success: true, message: "Profile Updated Successfully" });
     });
 });
+// ========== ADMIN UPDATE USER PROFILE API ==========
+
 app.delete("/university/delete/:id", (req, res) => {
   const { id } = req.params;
   const sql = "DELETE FROM un_data WHERE id = ?";
