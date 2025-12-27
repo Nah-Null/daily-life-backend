@@ -452,18 +452,34 @@ app.delete("/university/delete/:id", (req, res) => {
 
 app.get("/event/get", (req, res) => {
   const sql = `
-    SELECT organizer_id, organizer_name, activity_id, title, description, location, 
-           open_date, close_date, status, image
+    SELECT 
+      activity_id,
+      organizer_id,
+      organizer_name,
+      title,
+      description,
+      location,
+      open_date,
+      close_date,
+      image_url,
+      contact1,
+      contact2,
+      status
     FROM event
+    ORDER BY organizer_id, open_date
   `;
 
   db.query(sql, (err, results) => {
     if (err) {
       console.error("❌ Error fetching events:", err);
-      return res.status(500).json({ success: false, message: "Failed to fetch events", error: err });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch events"
+      });
     }
 
     const organizersMap = {};
+
     results.forEach(row => {
       if (!organizersMap[row.organizer_id]) {
         organizersMap[row.organizer_id] = {
@@ -472,6 +488,7 @@ app.get("/event/get", (req, res) => {
           activities: []
         };
       }
+
       organizersMap[row.organizer_id].activities.push({
         activity_id: row.activity_id,
         title: row.title,
@@ -479,15 +496,22 @@ app.get("/event/get", (req, res) => {
         location: row.location,
         open_date: row.open_date,
         close_date: row.close_date,
-        status: row.status,
-        image: row.image
+        image_url: row.image_url,
+        contact1: row.contact1,
+        contact2: row.contact2,
+        status: row.status
       });
     });
 
     const data = Object.values(organizersMap);
-    res.json({ success: true, data });
+
+    res.json({
+      success: true,
+      data
+    });
   });
 });
+
 
 // ========== ADD NEW UNIVERSITY ==========
 app.post("/university/add", (req, res) => {
