@@ -1100,6 +1100,50 @@ app.get("/getall/event/:id", (req, res) => {
   });
 });
 
+app.post("/register-event", (req, res) => {
+  const {
+    activity_id,
+    organizer_name,
+    firstname,
+    lastname,
+    phone,
+  } = req.body;
+
+  // basic validation
+  if (!activity_id || !firstname || !lastname || !phone) {
+    return res.status(400).json({
+      success: false,
+      message: "ข้อมูลไม่ครบ",
+    });
+  }
+
+  const sql = `
+    INSERT INTO register_event
+    (activity_id, organizer_name, firstname, lastname, phone)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [activity_id, organizer_name, firstname, lastname, phone],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({
+          success: false,
+          message: "บันทึกข้อมูลไม่สำเร็จ",
+        });
+      }
+
+      res.status(201).json({
+        success: true,
+        message: "ลงทะเบียนสำเร็จ",
+        register_id: result.insertId,
+      });
+    }
+  );
+});
+
 // ========== START SERVER ==========
 app.listen(5000, () => {
   console.log("🚀 Backend running on port 5000");
