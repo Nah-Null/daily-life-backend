@@ -1085,6 +1085,20 @@ app.get("/tables/size/all", (req, res) => {
   });
 });
 
+app.get("/getall/event/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "SELECT * FROM event WHERE organizer_id = ?";
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      console.error("Error fetching event:", err);
+      return res.status(500).json({ message: "Failed to fetch event" });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    res.json(results);
+  });
+});
 
 // ========== START SERVER ==========
 app.listen(5000, () => {
