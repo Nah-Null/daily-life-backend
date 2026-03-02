@@ -7,8 +7,7 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-const uuid = await import('uuid');
-const uuidv4 = uuid.v4;
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 app.use(cors());
