@@ -12,6 +12,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -20,11 +21,19 @@ app.use(express.urlencoded({ extended: true }));
 // ================= MULTER =================
 const upload = multer({
   storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(os.tmpdir(), 'uploads')),
-    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g,'_')}`)
+    destination: (req, file, cb) => {
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const safeName = file.originalname.replace(/\s+/g, "_");
+      cb(null, `${Date.now()}-${safeName}`);
+    }
   }),
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB
+  limits: {
+    fileSize: 100 * 1024 * 1024
+  }
 });
+
 
 const SALT_ROUNDS = 10;
 const ALLOWED_TYPES = ["UNIVERSITY", "ORGANIZER"];
@@ -56,10 +65,20 @@ db.getConnection((err, connection) => {
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    accessKeyId: process.env.AWS_ACCESS_KEY,
+    secretAccessKey: process.env.AWS_SECRET_KEY
   }
 });
+
+// =========================
+// CREATE TEMP UPLOAD FOLDER
+// =========================
+
+const uploadDir = path.join(os.tmpdir(), "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // ========== JWT MIDDLEWARE ==========
 function verifyToken(req, res, next) {
@@ -127,27 +146,21 @@ function verifyToken(req, res, next) {
 }
 
 // ================= S3 UPLOAD HELPER =================
-const uploadToS3 = async (file, folder) => {
-  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-  if (!allowed.includes(file.mimetype)) throw new Error('Invalid file type');
+async function uploadToS3(file, folder) {
 
-  const key = `${folder}/${Date.now()}-${uuidv4()}-${path.basename(file.path)}`;
-  const fileStream = fs.createReadStream(file.path);
+  const key = `${folder}/${Date.now()}-${file.originalname}`;
 
   const command = new PutObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET_NAME,
     Key: key,
-    Body: fileStream,
+    Body: fs.createReadStream(file.path),
     ContentType: file.mimetype
   });
 
   await s3.send(command);
 
-  // ลบไฟล์ชั่วคราว
-  fs.unlink(file.path, () => {});
-
-  return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.amazonaws.com/${key}`;
-};
+  return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+}
 
 
 // ========== AUTHENTICATION ENDPOINTS ==========
